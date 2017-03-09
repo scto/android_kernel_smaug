@@ -250,6 +250,7 @@ static int tegra_drm_load(struct drm_device *drm, unsigned long flags)
 		DRM_DEBUG_DRIVER("IOMMU aperture initialized (%#llx-%#llx)\n",
 				 start, end);
 		drm_mm_init(&tegra->mm, start, end - start + 1);
+		mutex_init(&tegra->mm_lock);
 	}
 
 	/* Enable IOMMU for host1x */
@@ -329,6 +330,7 @@ config:
 	if (tegra->domain) {
 		iommu_domain_free(tegra->domain);
 		drm_mm_takedown(&tegra->mm);
+		mutex_destroy(&tegra->mm_lock);
 	}
 free:
 	kfree(tegra);
@@ -353,6 +355,7 @@ static int tegra_drm_unload(struct drm_device *drm)
 	if (tegra->domain) {
 		iommu_domain_free(tegra->domain);
 		drm_mm_takedown(&tegra->mm);
+		mutex_destroy(&tegra->mm_lock);
 	}
 
 	kfree(tegra);
@@ -1270,7 +1273,11 @@ static int tegra_debugfs_iova(struct seq_file *s, void *data)
 	struct drm_device *drm = node->minor->dev;
 	struct tegra_drm *tegra = drm->dev_private;
 
-	return drm_mm_dump_table(s, &tegra->mm);
+	mutex_lock(&tegra->mm_lock);
+	drm_mm_dump_table(s, &tegra->mm);
+	mutex_unlock(&tegra->mm_lock);
+
+	return 0;
 }
 
 static struct drm_info_list tegra_debugfs_list[] = {
