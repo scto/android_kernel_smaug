@@ -1017,7 +1017,7 @@ static int tegra_start_keepon(struct drm_device *drm, void *data,
 	int err;
 
 	mutex_lock(&fpriv->lock);
-	context = tegra_drm_file_get_context(fpriv, args->context);
+	context = idr_find(&fpriv->contexts, args->context);
 	if (!context) {
 		err = -ENODEV;
 		goto done;
@@ -1053,7 +1053,7 @@ static int tegra_stop_keepon(struct drm_device *drm, void *data,
 	int err = 0;
 
 	mutex_lock(&fpriv->lock);
-	context = tegra_drm_file_get_context(fpriv, args->context);
+	context = idr_find(&fpriv->contexts, args->context);
 	if (!context) {
 		err = -ENODEV;
 		goto done;
@@ -1087,7 +1087,7 @@ static int tegra_get_clk_constraint(struct drm_device *drm, void *data,
 	int err;
 
 	mutex_lock(&fpriv->lock);
-	context = tegra_drm_file_get_context(fpriv, args->context);
+	context = idr_find(&fpriv->contexts, args->context);
 	if (!context) {
 		err = -ENODEV;
 		goto done;
@@ -1111,7 +1111,7 @@ static int tegra_set_clk_constraint(struct drm_device *drm, void *data,
 	int err;
 
 	mutex_lock(&fpriv->lock);
-	context = tegra_drm_file_get_context(fpriv, args->context);
+	context = idr_find(&fpriv->contexts, args->context);
 	if (!context) {
 		err = -ENODEV;
 		goto done;
