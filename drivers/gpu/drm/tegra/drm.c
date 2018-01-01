@@ -27,7 +27,6 @@
 
 struct tegra_drm_file {
 	struct list_head contexts;
-	struct mutex lock;
 };
 
 static void tegra_atomic_schedule(struct tegra_drm *tegra,
@@ -360,7 +359,6 @@ static int tegra_drm_open(struct drm_device *drm, struct drm_file *filp)
 		return -ENOMEM;
 
 	INIT_LIST_HEAD(&fpriv->contexts);
-	mutex_init(&fpriv->lock);
 	filp->driver_priv = fpriv;
 
 	return 0;
@@ -583,13 +581,11 @@ static bool tegra_drm_file_owns_context(struct tegra_drm_file *file,
 {
 	struct tegra_drm_context *ctx;
 
-	mutex_lock(&file->lock);
 	list_for_each_entry(ctx, &file->contexts, list)
 		if (ctx == context)
-			break;
-	mutex_unlock(&file->lock);
+			return true;
 
-	return ctx == context;
+	return false;
 }
 
 static int tegra_gem_create(struct drm_device *drm, void *data,
@@ -690,9 +686,7 @@ static int tegra_open_channel(struct drm_device *drm, void *data,
 			if (err)
 				break;
 
-			mutex_lock(&fpriv->lock);
 			list_add(&context->list, &fpriv->contexts);
-			mutex_unlock(&fpriv->lock);
 			args->context = (uintptr_t)context;
 			context->client = client;
 			mutex_init(&context->lock);
@@ -715,9 +709,7 @@ static int tegra_close_channel(struct drm_device *drm, void *data,
 	if (!tegra_drm_file_owns_context(fpriv, context))
 		return -EINVAL;
 
-	mutex_lock(&fpriv->lock);
 	list_del(&context->list);
-	mutex_unlock(&fpriv->lock);
 	tegra_drm_context_free(context);
 
 	return 0;
@@ -1161,10 +1153,8 @@ static void tegra_drm_preclose(struct drm_device *drm, struct drm_file *file)
 	list_for_each_entry(crtc, &drm->mode_config.crtc_list, head)
 		tegra_dc_cancel_page_flip(crtc, file);
 
-	mutex_lock(&fpriv->lock);
 	list_for_each_entry_safe(context, tmp, &fpriv->contexts, list)
 		tegra_drm_context_free(context);
-	mutex_unlock(&fpriv->lock);
 
 	kfree(fpriv);
 }
