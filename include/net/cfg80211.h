@@ -2980,6 +2980,8 @@ struct wiphy_vendor_command {
  * @regulatory_flags: wiphy regulatory flags, see
  *	&enum ieee80211_regulatory_flags
  * @features: features advertised to nl80211, see &enum nl80211_feature_flags.
+ * @ext_features: extended features advertised to nl80211, see
+ *	&enum nl80211_ext_feature_index.
  * @bss_priv_size: each BSS struct has private data allocated with it,
  *	this variable determines its size
  * @max_scan_ssids: maximum number of SSIDs the device can scan for in
@@ -3089,6 +3091,7 @@ struct wiphy {
 	u16 max_acl_mac_addrs;
 
 	u32 flags, regulatory_flags, features;
+	u8 ext_features[DIV_ROUND_UP(NUM_NL80211_EXT_FEATURES, 8)];
 
 	u32 ap_sme_capa;
 
@@ -3754,6 +3757,20 @@ const u8 *cfg80211_find_vendor_ie(unsigned int oui, u8 oui_type,
  * Return: 0 on success. -ENOMEM.
  */
 int regulatory_hint(struct wiphy *wiphy, const char *alpha2);
+
+/**
+ * regulatory_set_wiphy_regd - set regdom info for self managed drivers
+ * @wiphy: the wireless device we want to process the regulatory domain on
+ * @rd: the regulatory domain informatoin to use for this wiphy
+ *
+ * Set the regulatory domain information for self-managed wiphys, only they
+ * may use this function. See %REGULATORY_WIPHY_SELF_MANAGED for more
+ * information.
+ *
+ * Return: 0 on success. -EINVAL, -EPERM
+ */
+int regulatory_set_wiphy_regd(struct wiphy *wiphy,
+			      struct ieee80211_regdomain *rd);
 
 /**
  * wiphy_apply_custom_regulatory - apply a custom driver regulatory domain
@@ -4958,6 +4975,42 @@ void cfg80211_stop_iface(struct wiphy *wiphy, struct wireless_dev *wdev,
  */
 void cfg80211_shutdown_all_interfaces(struct wiphy *wiphy);
 
+/**
+ * wiphy_ext_feature_set - set the extended feature flag
+ *
+ * @wiphy: the wiphy to modify.
+ * @ftidx: extended feature bit index.
+ *
+ * The extended features are flagged in multiple bytes (see
+ * &struct wiphy.@ext_features)
+ */
+static inline void wiphy_ext_feature_set(struct wiphy *wiphy,
+					 enum nl80211_ext_feature_index ftidx)
+{
+	u8 *ft_byte;
+
+	ft_byte = &wiphy->ext_features[ftidx / 8];
+	*ft_byte |= BIT(ftidx % 8);
+}
+
+/**
+ * wiphy_ext_feature_isset - check the extended feature flag
+ *
+ * @wiphy: the wiphy to modify.
+ * @ftidx: extended feature bit index.
+ *
+ * The extended features are flagged in multiple bytes (see
+ * &struct wiphy.@ext_features)
+ */
+static inline bool
+wiphy_ext_feature_isset(struct wiphy *wiphy,
+			enum nl80211_ext_feature_index ftidx)
+{
+	u8 ft_byte;
+
+	ft_byte = wiphy->ext_features[ftidx / 8];
+	return (ft_byte & BIT(ftidx % 8)) != 0;
+}
 
 /* ethtool helper */
 void cfg80211_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info);

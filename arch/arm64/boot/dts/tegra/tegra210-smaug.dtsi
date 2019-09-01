@@ -15,11 +15,36 @@
 / {
 	compatible = "google,smaug", "nvidia,tegra210";
 
+	firmware: firmware {
+		android {
+			compatible = "android,firmware";
+			fstab {
+				compatible = "android,fstab";
+				system {
+					compatible = "android,system";
+					dev = "/dev/block/platform/700b0600.sdhci/by-name/APP";
+					type = "ext4";
+					mnt_flags = "ro,barrier=1,discard";
+					fsmgr_flags = "wait";
+					status = "ok";
+				};
+				vendor {
+					compatible = "android,vendor";
+					dev = "/dev/block/platform/700b0600.sdhci/by-name/VNR";
+					type = "ext4";
+					mnt_flags = "ro,barrier=1,discard";
+					fsmgr_flags = "wait";
+					status = "ok";
+				};
+			};
+		};
+	};
+
         chosen {
 #ifdef CONFIG_KASAN
 		bootargs = "cros_legacy console=ttyS0,115200n8 init=/init rw kgdboc=ttyS0 earlycon=uart8250,mmio32,0x70006000 ignore_loglevel=1 drm.atomic=1 firmware_class.path=/vendor/firmware kern_guid=%U no_console_suspend";
 #else
-		bootargs = "cros_legacy console= init=/init rw ignore_loglevel=1 drm.atomic=1 firmware_class.path=/vendor/firmware kern_guid=%U no_console_suspend";
+		bootargs = "cros_legacy console= init=/init rw ignore_loglevel=1 drm.atomic=1 firmware_class.path=/vendor/firmware kern_guid=%U no_console_suspend androidboot.selinux=permissive";
 #endif
 	};
 
@@ -33,6 +58,12 @@
 	host1x@50000000 {
 		vi: vi@54080000 {
 			avdd-dsi-csi-supply = <&pp1200_avdd>;
+		};
+
+		dpaux@0,54040000 {
+			status = "okay";
+
+			vdd-supply = <&pp3300>;
 		};
 
 		dsia: dsi@54300000 {
@@ -70,6 +101,24 @@
 				touch = <&touchscreen>;
 			};
 		};
+
+		sor@0,54580000 {
+			status = "okay";
+
+			nvidia,dpaux = <&dpaux1>;
+
+			avdd-io-hdmi-dp-supply = <&pp1800>;
+			vdd-hdmi-dp-pll-supply = <&avddio_1v05>;
+			vddio-dp-supply = <&pp1800>;
+			vdd18-dp-supply = <&pp1800>;
+			nvidia,head = <1>;
+		};
+
+		/*
+		dpaux@0,545c0000 {
+			status = "okay";
+		};
+		*/
 	};
 
 	gpu@57000000 {
