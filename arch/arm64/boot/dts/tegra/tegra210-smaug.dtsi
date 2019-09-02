@@ -44,7 +44,7 @@
 #ifdef CONFIG_KASAN
 		bootargs = "cros_legacy console=ttyS0,115200n8 init=/init rw kgdboc=ttyS0 earlycon=uart8250,mmio32,0x70006000 ignore_loglevel=1 drm.atomic=1 firmware_class.path=/vendor/firmware kern_guid=%U no_console_suspend";
 #else
-		bootargs = "cros_legacy console= init=/init rw ignore_loglevel=1 drm.atomic=1 firmware_class.path=/vendor/firmware kern_guid=%U no_console_suspend androidboot.selinux=permissive";
+		bootargs = "cros_legacy console= init=/init rw ignore_loglevel=1 drm.atomic=1 firmware_class.path=/vendor/firmware kern_guid=%U no_console_suspend";
 #endif
 	};
 
@@ -262,16 +262,6 @@
 			gpio-key,wakeup;
 			nvidia,pmc-wakeup = <&pmc
 				PMC_WAKE_TYPE_GPIO 3 PMC_TRIGGER_TYPE_NONE>;
-		};
-
-		tablet_mode {
-			label = "Tablet Mode";
-			gpios = <&gpio TEGRA_GPIO(Z, 2) GPIO_ACTIVE_HIGH>;
-			linux,input-type = <5>; /* EV_SW */
-			linux,code = <1>; /* SW_TABLET_MODE */
-			gpio-key,wakeup;
-			nvidia,pmc-wakeup = <&pmc
-				PMC_WAKE_TYPE_GPIO 36 PMC_TRIGGER_TYPE_NONE>;
 		};
 
 		volume_down {
